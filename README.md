@@ -43,20 +43,20 @@ npm start
 
 ## Проксируемые эндпоинты
 
-Прокси форвардит **любой** путь `/*` и `/v1/*`. Ниже — эндпоинты Polza, которые известно обрабатываются:
+Прокси форвардит **любой** путь `/*` и `/v1/*`. JSON-тела парсятся, на выбранных путях в них докидываются поля из `inject`; всё остальное (multipart, бинарные аплоады) форвардится как есть.
 
-| Путь | Метод | Инъекция |
-|------|-------|----------|
-| `/v1/chat/completions` | POST | ✅ да |
-| `/v1/completions` | POST | ✅ да |
-| `/v1/responses` | POST | ✅ да |
-| `/v1/media` | POST | — (только проксируется) |
-| `/v1/audio/transcriptions` | POST | — |
-| `/v1/audio/speech` | POST | — |
-| `/v1/embeddings` | POST | — |
-| `/v1/models` и прочее | любой | — |
+| Путь | Метод | Тип тела | Инъекция |
+|------|-------|----------|----------|
+| `/v1/chat/completions` | POST | JSON | ✅ да |
+| `/v1/completions` | POST | JSON | ✅ да |
+| `/v1/responses` | POST | JSON | ✅ да |
+| `/v1/media` | POST | multipart/form-data | — (форвард as-is) |
+| `/v1/audio/transcriptions` | POST | multipart/form-data | — (форвард as-is) |
+| `/v1/audio/speech` | POST | JSON → аудио-ответ | — |
+| `/v1/embeddings` | POST | JSON | — |
+| `/v1/models` и прочее | любой | — | — |
 
-Список путей для инъекции вшит в `src/config.js` (`INJECT_PATHS`) и не настраивается через конфиг.
+Список путей для инъекции вшит в `src/config.js` (`INJECT_PATHS`) и не настраивается через конфиг. Инъекция применяется только к JSON-телам — multipart-запросы проходят через прокси нетронутыми.
 
 Также прокси добавляет собственный `GET /healthz` → `{"ok": true}`.
 
