@@ -1,0 +1,17 @@
+{
+  "name": "polza-api-proxy",
+  "version": "0.1.0",
+  "description": "OpenAI-compatible proxy that injects Polza.ai-specific parameters (provider selection, etc.) into requests from IDEs and CLIs.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "fastify": "^5.2.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
