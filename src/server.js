@@ -103,44 +103,7 @@ async function main() {
       log.info({ injected, skippedByClient: skipped, path: subPath }, 'inject');
     }
 
-    applyCacheControl(body, log);
     return body;
-  }
-
-  function applyCacheControl(body, log) {
-    const cc = config.cacheControl;
-    if (!cc || typeof cc !== 'object' || !cc.type) return;
-    if (!Array.isArray(body.messages) || body.messages.length === 0) return;
-
-    const clientAlreadySet = body.messages.some((m) => {
-      if (!Array.isArray(m?.content)) return false;
-      return m.content.some((c) => c && typeof c === 'object' && c.cache_control !== undefined);
-    });
-    if (clientAlreadySet) {
-      log.info('cache_control already set by client, skipping inject');
-      return;
-    }
-
-    let targetIdx = -1;
-    for (let i = body.messages.length - 1; i >= 0; i--) {
-      if (body.messages[i]?.role === 'system') { targetIdx = i; break; }
-    }
-    if (targetIdx < 0) return;
-
-    const msg = body.messages[targetIdx];
-    if (typeof msg.content === 'string') {
-      msg.content = [{ type: 'text', text: msg.content, cache_control: { ...cc } }];
-    } else if (Array.isArray(msg.content) && msg.content.length > 0) {
-      const last = msg.content[msg.content.length - 1];
-      if (last && typeof last === 'object') {
-        last.cache_control = { ...cc };
-      } else {
-        return;
-      }
-    } else {
-      return;
-    }
-    log.info({ type: cc.type, messageIndex: targetIdx }, 'cache_control injected');
   }
 
   fastify.all('/*', async (request, reply) => {

@@ -1,6 +1,6 @@
 # Polza.ai API Proxy
 
-OpenAI-совместимый прокси перед [Polza.ai](https://polza.ai). Принимает стандартные запросы от IDE/CLI (которые не умеют задавать кастомные параметры), дописывает в них Polza-специфичные поля — [provider selection](https://polza.ai/docs/gaidy/provider-selection), [plugins](https://polza.ai/docs/gaidy/plugins), [prompt caching](https://polza.ai/docs/osobennosti/caching) — и прозрачно форвардит на `https://polza.ai/api/v1`.
+OpenAI-совместимый прокси перед [Polza.ai](https://polza.ai). Принимает стандартные запросы от IDE/CLI (которые не умеют задавать кастомные параметры), дописывает в них Polza-специфичные поля — [provider selection](https://polza.ai/docs/gaidy/provider-selection) — и прозрачно форвардит на `https://polza.ai/api/v1`.
 
 ## Оглавление
 
@@ -81,8 +81,7 @@ npm start
       "order": ["OpenAI", "Anthropic"],
       "allow_fallbacks": true
     }
-  },
-  "cacheControl": { "type": "ephemeral" }
+  }
 }
 ```
 
@@ -92,7 +91,6 @@ npm start
 | `host` | string | `"127.0.0.1"` | Интерфейс. Поставь `"0.0.0.0"` чтобы слушать все. |
 | `polzaApiKey` | string | `""` | Fallback API-ключ. Используется, если клиент не прислал `Authorization`. |
 | `inject` | object | `{}` | Поля, дописываемые в JSON-тело на `INJECT_PATHS`. Клиентское значение никогда не перетирается. Подробнее → [Инъекции](#инъекции). |
-| `cacheControl` | object или `null` | `null` | Если задан (`{"type": "ephemeral"}`) — прокси вставляет `cache_control` в последний content-блок последнего `system`-сообщения. Подробнее → [Caching](#caching). |
 
 Захардкожено в `src/config.js` и **не меняется** через конфиг: `UPSTREAM_BASE_URL` и `INJECT_PATHS`. Чтобы поменять — правь исходник.
 
@@ -118,44 +116,6 @@ npm start
 ```
 
 Варианты: `order`, `only`, `allow_fallbacks`, и т. д. — как в доке Polza.
-
-### Plugins
-
-[Документация](https://polza.ai/docs/gaidy/plugins). Доступные плагины: `web` (поиск в интернете), `file-parser` (извлечение текста из PDF), `response-healing` (авто-исправление невалидного JSON).
-
-```json
-{
-  "inject": {
-    "plugins": [
-      { "id": "web", "max_results": 3 },
-      { "id": "response-healing" },
-      { "id": "file-parser", "pdf": { "engine": "mistral-ocr" } }
-    ]
-  }
-}
-```
-
-Работает только на `/chat/completions`. Технически `plugins` — обычное top-level поле, поэтому обрабатывается стандартным механизмом `inject`.
-
-### Caching
-
-[Документация](https://polza.ai/docs/osobennosti/caching). Работает только с моделями Anthropic Claude. Максимум 4 точки кэширования на запрос.
-
-```json
-{
-  "cacheControl": { "type": "ephemeral" }
-}
-```
-
-Когда `cacheControl` задан и запрос идёт на `/chat/completions` и тело содержит `messages`, прокси:
-
-1. Проверяет, не проставил ли клиент `cache_control` хоть в одном content-блоке. Если да — ничего не делает.
-2. Находит **последнее** сообщение с `role: "system"`.
-3. Если его `content` — строка, преобразует в массив `[{type:"text", text:<строка>, cache_control:{...}}]`.
-4. Если `content` — массив блоков, добавляет `cache_control` в **последний** блок.
-5. Если `system`-сообщений нет — ничего не делает.
-
-Это канонический паттерн «кэшировать весь system-prompt»: `cache_control` на последнем блоке говорит Claude кэшировать всё, что было до этой точки включительно.
 
 ## Переменные окружения
 
@@ -208,7 +168,6 @@ curl http://127.0.0.1:8787/healthz
 2. Нормализует путь: срезает префикс `/v1`, отделяет query string.
 3. Для `POST` на `INJECT_PATHS`:
    - Применяет `applyInjections`: каждую пару `[key, value]` из `config.inject` кладёт в body, если клиент не задал её сам.
-   - Применяет `applyCacheControl` (если `config.cacheControl` задан).
 4. Строит заголовки для апстрима: копирует клиентские (кроме hop-by-hop), подставляет `Authorization: Bearer <polzaApiKey>` если клиент свой не прислал.
 5. Выполняет `fetch` к `UPSTREAM_BASE_URL + путь`.
 6. Форвардит статус, заголовки и body (стримом для SSE, иначе — просто `Readable.fromWeb`).

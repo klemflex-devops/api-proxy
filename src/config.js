@@ -38,7 +38,6 @@ export async function loadConfig() {
     polzaApiKey: fileKey || envKey || '',
     inject: raw.inject ?? {},
     injectPaths: INJECT_PATHS,
-    cacheControl: raw.cacheControl ?? null,
     sourcePath: path,
   };
 
