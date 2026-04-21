@@ -206,7 +206,7 @@ async function main() {
     return reply.send(Readable.fromWeb(upstream.body));
   });
 
-  fastify.get('/healthz', async () => ({ ok: true }));
+  fastify.get('/health', async () => ({ ok: true }));
 
   try {
     await fastify.listen({ port: config.port, host: config.host });

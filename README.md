@@ -58,7 +58,7 @@ npm start
 
 Список путей для инъекции вшит в `src/config.js` (`INJECT_PATHS`) и не настраивается через конфиг. Инъекция применяется только к JSON-телам — multipart-запросы проходят через прокси нетронутыми.
 
-Также прокси добавляет собственный `GET /healthz` → `{"ok": true}`.
+Также прокси добавляет собственный `GET /health` → `{"ok": true}`.
 
 ## Конфигурация
 
@@ -158,7 +158,7 @@ version: <X.Y.Z>  |  listening on http://<host>:<port>  |  upstream: https://pol
 ### Health check
 
 ```bash
-curl http://127.0.0.1:8787/healthz
+curl http://127.0.0.1:8787/health
 # {"ok":true}
 ```
 
