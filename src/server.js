@@ -60,7 +60,11 @@ async function main() {
         censor: '[redacted]',
       },
     },
-    bodyLimit: 20 * 1024 * 1024,
+    bodyLimit: 50 * 1024 * 1024,
+  });
+
+  fastify.addContentTypeParser('*', { parseAs: 'buffer' }, (_req, body, done) => {
+    done(null, body);
   });
 
   function buildUpstreamHeaders(requestHeaders) {
@@ -151,9 +155,13 @@ async function main() {
 
     const methodHasBody = !['GET', 'HEAD'].includes(request.method);
     if (methodHasBody && body !== undefined && body !== null) {
-      body = applyInjections(subPath, body, request.log);
-      serializedBody = typeof body === 'string' ? body : JSON.stringify(body);
-      headers['content-type'] = headers['content-type'] ?? 'application/json';
+      if (Buffer.isBuffer(body)) {
+        serializedBody = body.length > 0 ? body : undefined;
+      } else {
+        body = applyInjections(subPath, body, request.log);
+        serializedBody = typeof body === 'string' ? body : JSON.stringify(body);
+        headers['content-type'] = headers['content-type'] ?? 'application/json';
+      }
     }
 
     const debugBodies = ['1', 'true', 'yes'].includes(
@@ -161,7 +169,10 @@ async function main() {
     );
 
     if (debugBodies) {
-      request.log.info({ upstreamUrl, outgoingBody: serializedBody }, 'upstream request');
+      const logBody = Buffer.isBuffer(serializedBody)
+        ? `[binary ${serializedBody.length} bytes]`
+        : serializedBody;
+      request.log.info({ upstreamUrl, outgoingBody: logBody }, 'upstream request');
     }
 
     let upstream;
@@ -187,7 +198,8 @@ async function main() {
     const contentType = upstream.headers.get('content-type') ?? '';
     const isStream = contentType.includes('text/event-stream');
 
-    if (debugBodies && !isStream) {
+    const isJsonResponse = contentType.includes('application/json');
+    if (debugBodies && !isStream && isJsonResponse) {
       const text = await upstream.text();
       try {
         const parsed = JSON.parse(text);
@@ -199,6 +211,13 @@ async function main() {
         request.log.info({ status: upstream.status, raw: text.slice(0, 500) }, 'upstream response (non-JSON)');
       }
       return reply.send(text);
+    }
+
+    if (debugBodies && !isStream && !isJsonResponse) {
+      request.log.info(
+        { status: upstream.status, contentType },
+        'upstream response (binary, body not logged)',
+      );
     }
 
     if (debugBodies && isStream) {

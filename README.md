@@ -174,7 +174,7 @@ npm start
 - Тела запросов/ответов Fastify **по умолчанию не логирует**. Включи `DEBUG_BODIES=1` только на время отладки.
 - Hop-by-hop заголовки (`connection`, `keep-alive`, `transfer-encoding`, `content-length`, `accept-encoding` и прочие) не прокидываются ни в запрос к апстриму, ни в ответ клиенту.
 - SSE (`text/event-stream`, `stream: true`) форвардится как есть — прокси не буферизует стрим.
-- `bodyLimit`: 20 MiB.
+- `bodyLimit`: 50 MiB. Тела с `Content-Type`, отличным от `application/json` (например, `multipart/form-data` для `/v1/audio/transcriptions` и `/v1/media`), форвардятся как бинарный буфер без попытки парсинга.
 
 ## Запуск и диагностика
 
