@@ -208,6 +208,13 @@ async function main() {
 
   fastify.get('/health', async () => ({ ok: true }));
 
+  await printBanner({
+    version: readVersion(),
+    host: config.host,
+    port: config.port,
+    upstream: config.upstreamBaseUrl,
+  });
+
   try {
     await fastify.listen({ port: config.port, host: config.host });
   } catch (err) {
@@ -221,13 +228,6 @@ async function main() {
     fastify.log.error(err);
     process.exit(1);
   }
-
-  printBanner({
-    version: readVersion(),
-    host: config.host,
-    port: config.port,
-    upstream: config.upstreamBaseUrl,
-  });
 }
 
 main().catch((err) => {
