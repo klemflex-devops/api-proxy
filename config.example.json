@@ -7,5 +7,15 @@
       "only": ["OpenAI"],
       "allow_fallbacks": true
     }
+  },
+  "modelProviders": {
+    "deepseek/deepseek-v4-pro": {
+      "only": ["DeepSeek"],
+      "allow_fallbacks": false
+    },
+    "xiaomi/mimo-v2.5-pro": {
+      "only": ["Xiaomi", "DeepInfra"],
+      "allow_fallbacks": true
+    }
   }
 }

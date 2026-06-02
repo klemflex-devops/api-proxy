@@ -81,6 +81,12 @@ npm start
       "order": ["OpenAI", "Anthropic"],
       "allow_fallbacks": true
     }
+  },
+  "modelProviders": {
+    "deepseek/deepseek-v4-pro": {
+      "only": ["DeepSeek"],
+      "allow_fallbacks": false
+    }
   }
 }
 ```
@@ -91,6 +97,7 @@ npm start
 | `host` | string | `"127.0.0.1"` | Интерфейс. Поставь `"0.0.0.0"` чтобы слушать все. |
 | `polzaApiKey` | string | `""` | Fallback API-ключ. Используется, если клиент не прислал `Authorization`. |
 | `inject` | object | `{}` | Поля, дописываемые в JSON-тело на `INJECT_PATHS`. Клиентское значение никогда не перетирается. Подробнее → [Инъекции](#инъекции). |
+| `modelProviders` | object | `{}` | Per-model provider selection. Ключ — имя модели, значение — объект `provider` (те же поля: `only`, `order`, `allow_fallbacks`). Если модель запроса найдена здесь, её `provider` **полностью заменяет** глобальный `inject.provider`. Остальные ключи из `inject` работают как обычно. Подробнее → [Model-specific providers](#model-specific-providers). |
 
 Захардкожено в `src/config.js` и **не меняется** через конфиг: `UPSTREAM_BASE_URL` и `INJECT_PATHS`. Чтобы поменять — правь исходник.
 
@@ -116,6 +123,31 @@ npm start
 ```
 
 Варианты: `order`, `only`, `allow_fallbacks`, и т. д. — как в доке Polza.
+
+### Model-specific providers
+
+`modelProviders` позволяет привязать конкретную модель к конкретному провайдеру, не затрагивая глобальные настройки для остальных моделей.
+
+```json
+{
+  "modelProviders": {
+    "deepseek/deepseek-v4-pro": {
+      "only": ["DeepSeek"],
+      "allow_fallbacks": false
+    },
+    "xiaomi/mimo-v2.5-pro": {
+      "only": ["Xiaomi", "DeepInfra"],
+      "allow_fallbacks": true
+    }
+  }
+}
+```
+
+**Как работает:**
+1. Если в теле запроса есть поле `model` и оно найдено в `modelProviders` — для этой модели инжектится **свой** `provider`, полностью заменяя глобальный `inject.provider`.
+2. Если модели нет в `modelProviders` — работает глобальный `inject.provider` (текущее поведение).
+3. Если клиент **уже прислал** `provider` в теле запроса — ни глобальная, ни per-model настройка не применяется (клиентское значение всегда в приоритете).
+4. Все остальные поля из `inject` (кроме `provider`) инжектятся одинаково для всех моделей.
 
 ## Переменные окружения
 
