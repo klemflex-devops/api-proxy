@@ -37,6 +37,7 @@ export async function loadConfig() {
     upstreamBaseUrl: UPSTREAM_BASE_URL,
     polzaApiKey: fileKey || envKey || '',
     inject: raw.inject ?? {},
+    modelProviders: raw.modelProviders ?? {},
     injectPaths: INJECT_PATHS,
     sourcePath: path,
   };

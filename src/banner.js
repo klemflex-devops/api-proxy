@@ -5,8 +5,10 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SVG_PATH = resolve(__dirname, 'logo.svg');
 
-const GREEN = '#B2F72A';
-const GREEN_RGB = { r: 178, g: 247, b: 42 };
+const COLORTERM = (process.env.COLORTERM ?? '').toLowerCase();
+const USE_TRUECOLOR = COLORTERM === 'truecolor' || COLORTERM === '24bit';
+const GREEN = USE_TRUECOLOR ? '#39FF14' : '#B2F72A';
+const GREEN_RGB = USE_TRUECOLOR ? { r: 57, g: 255, b: 20 } : { r: 178, g: 247, b: 42 };
 const WHITE_RGB = { r: 255, g: 255, b: 255 };
 
 const BANNER_LINES = [
@@ -112,7 +114,9 @@ export async function printBanner({ version, host, port, upstream }) {
     for (const line of lines) process.stdout.write(line + '\n');
     process.stdout.write('\n' + chk.hex(GREEN)(infoLine) + '\n\n');
   } catch {
-    const open = process.stdout.isTTY && !process.env.NO_COLOR ? '\x1b[38;2;178;247;42m' : '';
+    const open = process.stdout.isTTY && !process.env.NO_COLOR
+      ? `\x1b[38;2;${GREEN_RGB.r};${GREEN_RGB.g};${GREEN_RGB.b}m`
+      : '';
     const close = open ? '\x1b[0m' : '';
     for (const line of BANNER_LINES) process.stdout.write(open + line + close + '\n');
     process.stdout.write(open + infoLine + close + '\n\n');

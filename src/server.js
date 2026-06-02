@@ -89,18 +89,28 @@ async function main() {
     if (!body || typeof body !== 'object') return body;
     if (!shouldInject(subPath)) return body;
 
+    const modelProvider = body.model && config.modelProviders[body.model];
+
     const injected = [];
     const skipped = [];
     for (const [key, value] of Object.entries(config.inject ?? {})) {
+      const effectiveValue = key === 'provider' && modelProvider ? modelProvider : value;
       if (body[key] === undefined) {
-        body[key] = value;
+        body[key] = effectiveValue;
         injected.push(key);
       } else {
         skipped.push(key);
       }
     }
+    if (modelProvider && body.provider === undefined && !(config.inject && 'provider' in config.inject)) {
+      body.provider = modelProvider;
+      injected.push('provider');
+    }
     if (injected.length || skipped.length) {
-      log.info({ injected, skippedByClient: skipped, path: subPath }, 'inject');
+      log.info(
+        { injected, skippedByClient: skipped, path: subPath, modelProvider: !!modelProvider },
+        'inject',
+      );
     }
 
     return body;
